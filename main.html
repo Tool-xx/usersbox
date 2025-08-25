@@ -1,1 +1,96 @@
-1
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Рандомный редирект</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        .container {
+            text-align: center;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Перенаправление...</h1>
+        <div class="loader"></div>
+        <p>Идёт загрузка списка ссылок</p>
+    </div>
+
+    <script>
+        async function loadAndRedirect() {
+            try {
+                // Загружаем файл links.txt
+                const response = await fetch('links.txt');
+                
+                if (!response.ok) {
+                    throw new Error('Файл links.txt не найден');
+                }
+                
+                const text = await response.text();
+                
+                // Разбиваем текст на строки и фильтруем пустые
+                const links = text.split('\n')
+                    .map(link => link.trim())
+                    .filter(link => link !== '');
+                
+                if (links.length === 0) {
+                    throw new Error('Файл links.txt пуст или не содержит валидных ссылок');
+                }
+                
+                // Выбираем случайную ссылку
+                const randomIndex = Math.floor(Math.random() * links.length);
+                const randomLink = links[randomIndex];
+                
+                // Проверяем, начинается ли ссылка с http/https
+                let finalLink = randomLink;
+                if (!randomLink.startsWith('http://') && !randomLink.startsWith('https://')) {
+                    finalLink = 'https://' + randomLink;
+                }
+                
+                // Перенаправляем
+                setTimeout(() => {
+                    window.location.href = finalLink;
+                }, 2000); // Задержка 2 секунды для показа анимации
+                
+            } catch (error) {
+                console.error('Ошибка:', error);
+                document.querySelector('.container').innerHTML = `
+                    <h1>Ошибка</h1>
+                    <p>${error.message}</p>
+                    <p>Убедитесь, что файл links.txt существует и содержит ссылки</p>
+                `;
+            }
+        }
+
+        // Запускаем процесс при загрузке страницы
+        document.addEventListener('DOMContentLoaded', loadAndRedirect);
+    </script>
+</body>
+</html>
