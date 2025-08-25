@@ -1,179 +1,75 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Рандомный редирект - UsersBox</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-        .container {
-            text-align: center;
-            padding: 30px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-            backdrop-filter: blur(10px);
-            max-width: 90%;
-        }
-        .loader {
-            border: 4px solid rgba(255,255,255,0.3);
-            border-top: 4px solid #fff;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-            margin: 20px auto;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        .error {
-            color: #ff6b6b;
-            background: rgba(0,0,0,0.5);
-            padding: 15px;
-            border-radius: 8px;
-            margin: 10px 0;
-        }
-        button {
-            background: #fff;
-            color: #667eea;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 25px;
-            cursor: pointer;
-            font-weight: bold;
-            margin-top: 15px;
-            transition: all 0.3s ease;
-        }
-        button:hover {
-            background: #f8f9fa;
-            transform: translateY(-2px);
-        }
-        .link-info {
-            margin-top: 15px;
-            font-size: 14px;
-            opacity: 0.8;
-        }
-        .success {
-            color: #4ecdc4;
-            background: rgba(0,0,0,0.5);
-            padding: 15px;
-            border-radius: 8px;
-            margin: 10px 0;
-        }
-    </style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Random redirect</title>
+  <style>
+    body { font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; 
+           display:flex; align-items:center; justify-content:center; min-height:100vh;
+           margin:0; background:#0f172a; color:#e6edf3; }
+    .card { max-width:520px; text-align:center; padding:28px; border-radius:12px;
+           box-shadow: 0 8px 30px rgba(2,6,23,0.6); background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); }
+    a.btn { display:inline-block; margin-top:16px; padding:10px 16px; border-radius:8px; text-decoration:none; color:inherit; border:1px solid rgba(255,255,255,0.06); }
+    small { opacity:0.75; display:block; margin-top:8px; }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🎯 Перенаправление...</h1>
-        <div class="loader"></div>
-        <p>Загружаем список ссылок из UsersBox</p>
-        <div class="link-info" id="linkInfo"></div>
-    </div>
+  <div class="card" id="app">
+    <h1>Перенаправление...</h1>
+    <p id="status">Подгружаю список ссылок и выбираю случайную...</p>
+    <a id="openLink" class="btn" href="#" target="_blank" rel="noopener" style="display:none">Открыть сейчас в новой вкладке</a>
+    <small id="info">Если ничего не происходит — обновите страницу или посмотрите консоль браузера.</small>
+  </div>
 
-    <script>
-        // ПРАВИЛЬНЫЙ URL вашего файла links.txt
-        const LINKS_FILE_URL = 'https://raw.githubusercontent.com/Tool-xx/usersbox/main/links.txt';
+  <script>
+    (async function() {
+      const statusEl = document.getElementById('status');
+      const openLinkBtn = document.getElementById('openLink');
 
-        async function loadAndRedirect() {
-            try {
-                const linkInfo = document.getElementById('linkInfo');
-                linkInfo.textContent = 'Подключаемся к GitHub...';
-                
-                console.log('Пытаемся загрузить:', LINKS_FILE_URL);
-                
-                // Загружаем файл links.txt с таймаутом
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 10000);
-                
-                const response = await fetch(LINKS_FILE_URL, {
-                    signal: controller.signal,
-                    headers: {
-                        'Cache-Control': 'no-cache',
-                        'Pragma': 'no-cache'
-                    }
-                });
-                
-                clearTimeout(timeoutId);
-                
-                if (!response.ok) {
-                    throw new Error(`Ошибка сервера: ${response.status} ${response.statusText}`);
-                }
-                
-                const text = await response.text();
-                console.log('Файл загружен успешно');
-                
-                // Разбиваем на строки и фильтруем
-                const links = text.split('\n')
-                    .map(link => link.trim())
-                    .filter(link => {
-                        return link !== '' && 
-                               !link.startsWith('#') && 
-                               !link.startsWith('//');
-                    });
-                
-                console.log('Найдено ссылок:', links.length);
-                
-                if (links.length === 0) {
-                    throw new Error('Файл не содержит валидных ссылок');
-                }
-                
-                // Выбираем случайную ссылку
-                const randomIndex = Math.floor(Math.random() * links.length);
-                const randomLink = links[randomIndex];
-                
-                // Показываем информацию о выбранной ссылке
-                linkInfo.innerHTML = `<span class="success">✓ Найдено ${links.length} ссылок</span><br>Выбрана: ${randomLink}`;
-                
-                // Форматируем ссылку
-                let finalLink = randomLink;
-                if (!randomLink.startsWith('http://') && !randomLink.startsWith('https://') && !randomLink.startsWith('//')) {
-                    finalLink = 'https://' + randomLink;
-                } else if (randomLink.startsWith('//')) {
-                    finalLink = 'https:' + randomLink;
-                }
-                
-                // Перенаправляем через 3 секунды
-                setTimeout(() => {
-                    console.log('Перенаправление на:', finalLink);
-                    window.location.href = finalLink;
-                }, 3000);
-                
-            } catch (error) {
-                console.error('Ошибка:', error);
-                document.querySelector('.container').innerHTML = `
-                    <h1>❌ Ошибка загрузки</h1>
-                    <div class="error">
-                        <p><strong>${error.name === 'AbortError' ? 'Таймаут соединения' : error.message}</strong></p>
-                        <p>Проверьте:</p>
-                        <ul style="text-align: left; margin: 10px 0;">
-                            <li>Файл links.txt существует в репозитории</li>
-                            <li>Ссылка корректна: <code>${LINKS_FILE_URL}</code></li>
-                            <li>Файл содержит валидные ссылки (по одной на строку)</li>
-                            <li>Файл доступен публично</li>
-                        </ul>
-                        <p>Проверить файл: <a href="${LINKS_FILE_URL}" style="color: #ff6b6b;" target="_blank">${LINKS_FILE_URL}</a></p>
-                    </div>
-                    <button onclick="location.reload()">🔄 Попробовать снова</button>
-                    <p style="margin-top: 15px; font-size: 12px;">
-                        Репозиторий: <a href="https://github.com/Tool-xx/usersbox" style="color: #fff;">Tool-xx/usersbox</a>
-                    </p>
-                `;
-            }
+      try {
+        // Добавляем параметр, чтобы избежать кэширования при частых обновлениях файла
+        const resp = await fetch('links.txt?t=' + Date.now(), {cache: 'no-store'});
+        if (!resp.ok) throw new Error('Не удалось загрузить links.txt — HTTP ' + resp.status);
+        const txt = await resp.text();
+
+        // Разбиваем на строки, убираем пустые и комментарии, trim
+        const lines = txt.split(/\r?\n/).map(l => l.trim())
+                         .filter(l => l && !l.startsWith('#'));
+
+        if (!lines.length) {
+          statusEl.textContent = 'Список ссылок пуст — добавьте URL в links.txt (по одному на строку).';
+          return;
         }
 
-        // Запускаем при загрузке страницы
-        document.addEventListener('DOMContentLoaded', loadAndRedirect);
-    </script>
+        // Фильтрация: оставляем строки, которые выглядят как URL (начинаются с http:// или https://)
+        const urls = lines.filter(l => /^https?:\/\//i.test(l));
+        const pool = urls.length ? urls : lines; // если нет протоколов, используем всё что есть
+
+        // Выбираем случайный
+        const chosen = pool[Math.floor(Math.random() * pool.length)];
+
+        statusEl.textContent = 'Перенаправляю на случайную ссылку...';
+        // Показываем кнопку как запасной вариант
+        openLinkBtn.href = chosen;
+        openLinkBtn.style.display = 'inline-block';
+
+        // Нативное JS-редирект (заменяем текущую запись в истории)
+        setTimeout(() => {
+          window.location.replace(chosen);
+        }, 600); // небольшая задержка, чтобы пользователь успел увидеть сообщение
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent = 'Ошибка: ' + (err.message || err);
+      }
+    })();
+  </script>
+
+  <noscript>
+    <div style="margin-top:16px; text-align:center;">
+      <p>JavaScript отключён — автоматическое перенаправление не сработает.</p>
+      <p>Откройте <code>links.txt</code> вручную и выберите ссылку.</p>
+    </div>
+  </noscript>
 </body>
 </html>
