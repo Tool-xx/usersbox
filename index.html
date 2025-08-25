@@ -3,291 +3,73 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Telegram Bot Viewer</title>
+  <title>Random redirect</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { 
-      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; 
-      background: #0f172a; color: #e6edf3; min-height: 100vh;
-      display: flex; flex-direction: column; align-items: center; padding: 20px;
-    }
-    
-    .header { text-align: center; margin-bottom: 20px; }
-    .header h1 { margin-bottom: 8px; color: #fff; }
-    .header p { opacity: 0.8; font-size: 14px; }
-    
-    .container { 
-      width: 100%; max-width: 1200px; display: flex; flex-direction: column; 
-      gap: 20px; flex: 1;
-    }
-    
-    .bot-frame-container {
-      flex: 1; display: flex; flex-direction: column; 
-      background: rgba(255,255,255,0.02); border-radius: 12px;
-      overflow: hidden; box-shadow: 0 8px 30px rgba(2,6,23,0.6);
-    }
-    
-    .bot-frame-header {
-      padding: 16px; background: rgba(255,255,255,0.05);
-      display: flex; justify-content: space-between; align-items: center;
-      border-bottom: 1px solid rgba(255,255,255,0.1);
-    }
-    
-    .bot-info { display: flex; align-items: center; gap: 10px; }
-    .bot-avatar { width: 32px; height: 32px; border-radius: 50%; background: #3b82f6; }
-    .bot-name { font-weight: 500; }
-    .bot-username { opacity: 0.7; font-size: 14px; }
-    
-    .bot-controls { display: flex; gap: 10px; }
-    
-    .btn {
-      padding: 8px 16px; border-radius: 8px; border: none;
-      background: rgba(255,255,255,0.1); color: inherit;
-      cursor: pointer; transition: all 0.2s ease;
-      text-decoration: none; display: inline-flex; align-items: center;
-      gap: 6px; font-size: 14px;
-    }
-    
-    .btn:hover { background: rgba(255,255,255,0.15); transform: translateY(-1px); }
-    .btn-primary { background: #3b82f6; color: white; }
-    .btn-primary:hover { background: #2563eb; }
-    
-    .bot-frame {
-      flex: 1; border: none; background: white;
-      width: 100%; height: 600px; border-radius: 0 0 12px 12px;
-    }
-    
-    .status-bar {
-      padding: 12px 16px; background: rgba(255,255,255,0.03);
-      border-top: 1px solid rgba(255,255,255,0.1);
-      display: flex; justify-content: space-between; align-items: center;
-      font-size: 14px;
-    }
-    
-    .bot-stats { opacity: 0.7; }
-    
-    .loader {
-      display: inline-block; width: 16px; height: 16px;
-      border: 2px solid rgba(255,255,255,0.3); border-radius: 50%;
-      border-top-color: #fff; animation: spin 1s ease-in-out infinite;
-    }
-    
-    @keyframes spin { to { transform: rotate(360deg); } }
-    
-    .error-message {
-      background: rgba(239, 68, 68, 0.1); color: #ef4444;
-      padding: 16px; border-radius: 8px; margin: 10px;
-      text-align: center; border: 1px solid rgba(239, 68, 68, 0.3);
-    }
-    
-    @media (max-width: 768px) {
-      .container { flex-direction: column; }
-      .bot-frame { height: 400px; }
-      .bot-controls { flex-wrap: wrap; }
-    }
+    body { font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; 
+           display:flex; align-items:center; justify-content:center; min-height:100vh;
+           margin:0; background:#0f172a; color:#e6edf3; }
+    .card { max-width:520px; text-align:center; padding:28px; border-radius:12px;
+           box-shadow: 0 8px 30px rgba(2,6,23,0.6); background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); }
+    a.btn { display:inline-block; margin-top:16px; padding:10px 16px; border-radius:8px; text-decoration:none; color:inherit; border:1px solid rgba(255,255,255,0.06); }
+    small { opacity:0.75; display:block; margin-top:8px; }
   </style>
 </head>
 <body>
-  <div class="header">
-    <h1>🤖 Telegram Bot Viewer</h1>
-    <p>Общайтесь с ботами прямо на сайте</p>
-  </div>
-
-  <div class="container">
-    <div class="bot-frame-container">
-      <div class="bot-frame-header">
-        <div class="bot-info">
-          <div class="bot-avatar"></div>
-          <div>
-            <div class="bot-name" id="botName">Загрузка бота...</div>
-            <div class="bot-username" id="botUsername">@username</div>
-          </div>
-        </div>
-        <div class="bot-controls">
-          <button class="btn" id="refreshBtn" title="Перезагрузить бота">
-            🔄
-          </button>
-          <button class="btn" id="changeBotBtn" title="Сменить бота">
-            🔀 Сменить бота
-          </button>
-          <a class="btn btn-primary" id="openInTgBtn" target="_blank" rel="noopener">
-            📱 Открыть в Telegram
-          </a>
-        </div>
-      </div>
-      
-      <iframe 
-        class="bot-frame" 
-        id="botFrame" 
-        src="about:blank"
-        sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-        loading="lazy"
-      ></iframe>
-      
-      <div class="status-bar">
-        <div class="bot-stats" id="botStats">Загрузка списка ботов...</div>
-        <div id="connectionStatus">Подключение...</div>
-      </div>
-    </div>
+  <div class="card" id="app">
+    <h1>Перенаправление...</h1>
+    <p id="status">Подгружаю список ссылок и выбираю случайную...</p>
+    <a id="openLink" class="btn" href="#" target="_blank" rel="noopener" style="display:none">Открыть сейчас в новой вкладке</a>
+    <small id="info">Если ничего не происходит — обновите страницу или посмотрите консоль браузера.</small>
   </div>
 
   <script>
-    class TelegramBotViewer {
-      constructor() {
-        this.bots = [];
-        this.currentBotIndex = -1;
-        this.failedBots = new Set();
-        this.initializeElements();
-        this.loadBots();
-      }
+    (async function() {
+      const statusEl = document.getElementById('status');
+      const openLinkBtn = document.getElementById('openLink');
 
-      initializeElements() {
-        this.botFrame = document.getElementById('botFrame');
-        this.botName = document.getElementById('botName');
-        this.botUsername = document.getElementById('botUsername');
-        this.botStats = document.getElementById('botStats');
-        this.connectionStatus = document.getElementById('connectionStatus');
-        this.refreshBtn = document.getElementById('refreshBtn');
-        this.changeBotBtn = document.getElementById('changeBotBtn');
-        this.openInTgBtn = document.getElementById('openInTgBtn');
+      try {
+        // Добавляем параметр, чтобы избежать кэширования при частых обновлениях файла
+        const resp = await fetch('links.txt?t=' + Date.now(), {cache: 'no-store'});
+        if (!resp.ok) throw new Error('Не удалось загрузить links.txt — HTTP ' + resp.status);
+        const txt = await resp.text();
 
-        this.refreshBtn.addEventListener('click', () => this.refreshCurrentBot());
-        this.changeBotBtn.addEventListener('click', () => this.nextBot());
-        this.botFrame.addEventListener('load', () => this.onFrameLoad());
-        this.botFrame.addEventListener('error', () => this.onFrameError());
-      }
+        // Разбиваем на строки, убираем пустые и комментарии, trim
+        const lines = txt.split(/\r?\n/).map(l => l.trim())
+                         .filter(l => l && !l.startsWith('#'));
 
-      async loadBots() {
-        try {
-          this.setStatus('Загружаю список ботов...', 'loading');
-          
-          const resp = await fetch('links.txt?t=' + Date.now(), {cache: 'no-store'});
-          if (!resp.ok) throw new Error('Не удалось загрузить файл с ботами');
-          
-          const txt = await resp.text();
-          this.bots = txt.split(/\r?\n/)
-            .map(l => l.trim())
-            .filter(l => l && !l.startsWith('#'))
-            .map(l => this.normalizeBotUrl(l));
-
-          if (this.bots.length === 0) {
-            throw new Error('Список ботов пуст');
-          }
-
-          this.updateStats();
-          this.nextBot();
-        } catch (error) {
-          this.showError('Ошибка загрузки ботов: ' + error.message);
-        }
-      }
-
-      normalizeBotUrl(url) {
-        if (url.startsWith('@')) {
-          return `https://t.me/${url.slice(1)}`;
-        }
-        if (!url.startsWith('http')) {
-          return `https://t.me/${url}`;
-        }
-        return url;
-      }
-
-      async nextBot() {
-        if (this.bots.length === 0) return;
-
-        const availableBots = this.bots.filter((_, index) => !this.failedBots.has(index));
-        
-        if (availableBots.length === 0) {
-          this.showError('Все боты в списке недоступны');
+        if (!lines.length) {
+          statusEl.textContent = 'Список ссылок пуст — добавьте URL в links.txt (по одному на строку).';
           return;
         }
 
-        // Выбираем случайного бота из доступных
-        const randomIndex = Math.floor(Math.random() * availableBots.length);
-        const botUrl = availableBots[randomIndex];
-        this.currentBotIndex = this.bots.indexOf(botUrl);
+        // Фильтрация: оставляем строки, которые выглядят как URL (начинаются с http:// или https://)
+        const urls = lines.filter(l => /^https?:\/\//i.test(l));
+        const pool = urls.length ? urls : lines; // если нет протоколов, используем всё что есть
 
-        this.loadBot(botUrl);
+        // Выбираем случайный
+        const chosen = pool[Math.floor(Math.random() * pool.length)];
+
+        statusEl.textContent = 'Перенаправляю на случайную ссылку...';
+        // Показываем кнопку как запасной вариант
+        openLinkBtn.href = chosen;
+        openLinkBtn.style.display = 'inline-block';
+
+        // Нативное JS-редирект (заменяем текущую запись в истории)
+        setTimeout(() => {
+          window.location.replace(chosen);
+        }, 600); // небольшая задержка, чтобы пользователь успел увидеть сообщение
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent = 'Ошибка: ' + (err.message || err);
       }
-
-      loadBot(botUrl) {
-        this.setStatus('Загрузка бота...', 'loading');
-        
-        const username = this.extractUsername(botUrl);
-        this.botName.textContent = 'Бот';
-        this.botUsername.textContent = `@${username}`;
-        this.openInTgBtn.href = botUrl;
-
-        // Загружаем бота в iframe
-        this.botFrame.src = botUrl;
-        
-        // Таймаут для проверки загрузки
-        this.loadTimeout = setTimeout(() => {
-          if (this.botFrame.src === botUrl) {
-            this.onFrameError();
-          }
-        }, 10000);
-      }
-
-      extractUsername(botUrl) {
-        return botUrl.split('/').pop().replace('@', '');
-      }
-
-      onFrameLoad() {
-        clearTimeout(this.loadTimeout);
-        this.setStatus('Бот загружен', 'success');
-        this.failedBots.delete(this.currentBotIndex);
-      }
-
-      onFrameError() {
-        clearTimeout(this.loadTimeout);
-        this.setStatus('Бот недоступен', 'error');
-        this.failedBots.add(this.currentBotIndex);
-        this.updateStats();
-      }
-
-      refreshCurrentBot() {
-        if (this.currentBotIndex >= 0) {
-          const botUrl = this.bots[this.currentBotIndex];
-          this.loadBot(botUrl);
-        }
-      }
-
-      setStatus(message, type = 'info') {
-        this.connectionStatus.textContent = message;
-        this.connectionStatus.style.color = 
-          type === 'error' ? '#ef4444' : 
-          type === 'success' ? '#10b981' : 
-          type === 'loading' ? '#3b82f6' : '#e6edf3';
-      }
-
-      updateStats() {
-        const total = this.bots.length;
-        const available = total - this.failedBots.size;
-        this.botStats.textContent = `Доступно: ${available}/${total} ботов`;
-      }
-
-      showError(message) {
-        const errorDiv = document.createElement('div');
-        errorDiv.className = 'error-message';
-        errorDiv.textContent = message;
-        
-        const container = document.querySelector('.bot-frame-container');
-        const frame = document.querySelector('.bot-frame');
-        frame.style.display = 'none';
-        
-        container.insertBefore(errorDiv, frame);
-        
-        this.setStatus('Ошибка', 'error');
-      }
-    }
-
-    // Инициализация при загрузке страницы
-    document.addEventListener('DOMContentLoaded', () => {
-      new TelegramBotViewer();
-    });
-
-    // Fallback для noscript
-    document.write('<noscript><div style="padding:20px;text-align:center;"><p>JavaScript отключён — для работы с ботами включите JavaScript</p></div></noscript>');
+    })();
   </script>
+
+  <noscript>
+    <div style="margin-top:16px; text-align:center;">
+      <p>JavaScript отключён — автоматическое перенаправление не сработает.</p>
+      <p>Откройте <code>links.txt</code> вручную и выберите ссылку.</p>
+    </div>
+  </noscript>
 </body>
 </html>
