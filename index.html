@@ -3,10 +3,11 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Random Telegram Redirect</title>
+  <title>Random redirect</title>
   <style>
-    body { font-family: Inter, system-ui, sans-serif; display:flex; align-items:center; justify-content:center;
-           min-height:100vh; margin:0; background:#0f172a; color:#e6edf3; }
+    body { font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; 
+           display:flex; align-items:center; justify-content:center; min-height:100vh;
+           margin:0; background:#0f172a; color:#e6edf3; }
     .card { max-width:520px; text-align:center; padding:28px; border-radius:12px;
            box-shadow: 0 8px 30px rgba(2,6,23,0.6); background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); }
     a.btn { display:inline-block; margin-top:16px; padding:10px 16px; border-radius:8px; text-decoration:none; color:inherit; border:1px solid rgba(255,255,255,0.06); }
@@ -15,68 +16,60 @@
 </head>
 <body>
   <div class="card" id="app">
-    <h1>Поиск рабочей ссылки...</h1>
-    <p id="status">Загружаю список и проверяю доступность...</p>
-    <a id="openLink" class="btn" href="#" target="_blank" rel="noopener" style="display:none">Открыть сейчас</a>
-    <small id="info">Если ничего не происходит — обновите страницу.</small>
+    <h1>Перенаправление...</h1>
+    <p id="status">Подгружаю список ссылок и выбираю случайную...</p>
+    <a id="openLink" class="btn" href="#" target="_blank" rel="noopener" style="display:none">Открыть сейчас в новой вкладке</a>
+    <small id="info">Если ничего не происходит — обновите страницу или посмотрите консоль браузера.</small>
   </div>
 
   <script>
-    const proxy = 'https://api.allorigins.win/get?url='; // CORS proxy
-    const statusEl = document.getElementById('status');
-    const openLinkBtn = document.getElementById('openLink');
-
-    async function isTelegramLinkAlive(url) {
-      try {
-        const encoded = encodeURIComponent(url);
-        const res = await fetch(proxy + encoded);
-        if (!res.ok) return false;
-        const data = await res.json();
-        const html = data.contents;
-
-        if (html.includes('This page is not available')) return false;
-        if (html.includes('<meta property="og:image"')) return true; // фото есть
-        if (html.includes('<meta property="og:title"')) return true; // fallback
-        return false;
-      } catch {
-        return false;
-      }
-    }
-
     (async function() {
+      const statusEl = document.getElementById('status');
+      const openLinkBtn = document.getElementById('openLink');
+
       try {
-        const resp = await fetch('links.txt?t=' + Date.now(), { cache: 'no-store' });
+        // Добавляем параметр, чтобы избежать кэширования при частых обновлениях файла
+        const resp = await fetch('links.txt?t=' + Date.now(), {cache: 'no-store'});
         if (!resp.ok) throw new Error('Не удалось загрузить links.txt — HTTP ' + resp.status);
         const txt = await resp.text();
-        let links = txt.split(/\r?\n/).map(l => l.trim()).filter(l => l && !l.startsWith('#'));
 
-        if (!links.length) {
-          statusEl.textContent = 'Список пуст — добавьте ссылки в links.txt';
+        // Разбиваем на строки, убираем пустые и комментарии, trim
+        const lines = txt.split(/\r?\n/).map(l => l.trim())
+                         .filter(l => l && !l.startsWith('#'));
+
+        if (!lines.length) {
+          statusEl.textContent = 'Список ссылок пуст — добавьте URL в links.txt (по одному на строку).';
           return;
         }
 
-        const workingLinks = [];
-        for (const link of links) {
-          statusEl.textContent = `Проверяю: ${link}`;
-          const alive = await isTelegramLinkAlive(link);
-          if (alive) workingLinks.push(link);
-        }
+        // Фильтрация: оставляем строки, которые выглядят как URL (начинаются с http:// или https://)
+        const urls = lines.filter(l => /^https?:\/\//i.test(l));
+        const pool = urls.length ? urls : lines; // если нет протоколов, используем всё что есть
 
-        if (!workingLinks.length) {
-          statusEl.textContent = 'Нет доступных ссылок (все мёртвые).';
-          return;
-        }
+        // Выбираем случайный
+        const chosen = pool[Math.floor(Math.random() * pool.length)];
 
-        const chosen = workingLinks[Math.floor(Math.random() * workingLinks.length)];
-        statusEl.textContent = 'Перенаправляю на рабочую ссылку...';
+        statusEl.textContent = 'Перенаправляю на случайную ссылку...';
+        // Показываем кнопку как запасной вариант
         openLinkBtn.href = chosen;
         openLinkBtn.style.display = 'inline-block';
-        setTimeout(() => window.location.replace(chosen), 1000);
+
+        // Нативное JS-редирект (заменяем текущую запись в истории)
+        setTimeout(() => {
+          window.location.replace(chosen);
+        }, 600); // небольшая задержка, чтобы пользователь успел увидеть сообщение
       } catch (err) {
         console.error(err);
         statusEl.textContent = 'Ошибка: ' + (err.message || err);
       }
     })();
   </script>
+
+  <noscript>
+    <div style="margin-top:16px; text-align:center;">
+      <p>JavaScript отключён — автоматическое перенаправление не сработает.</p>
+      <p>Откройте <code>links.txt</code> вручную и выберите ссылку.</p>
+    </div>
+  </noscript>
 </body>
 </html>
