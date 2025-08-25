@@ -3,11 +3,10 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Random redirect</title>
+  <title>Random Telegram Bot Redirect</title>
   <style>
-    body { font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; 
-           display:flex; align-items:center; justify-content:center; min-height:100vh;
-           margin:0; background:#0f172a; color:#e6edf3; }
+    body { font-family: Inter, system-ui, sans-serif; display:flex; align-items:center; justify-content:center;
+           min-height:100vh; margin:0; background:#0f172a; color:#e6edf3; }
     .card { max-width:520px; text-align:center; padding:28px; border-radius:12px;
            box-shadow: 0 8px 30px rgba(2,6,23,0.6); background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); }
     a.btn { display:inline-block; margin-top:16px; padding:10px 16px; border-radius:8px; text-decoration:none; color:inherit; border:1px solid rgba(255,255,255,0.06); }
@@ -16,60 +15,75 @@
 </head>
 <body>
   <div class="card" id="app">
-    <h1>Перенаправление...</h1>
-    <p id="status">Подгружаю список ссылок и выбираю случайную...</p>
-    <a id="openLink" class="btn" href="#" target="_blank" rel="noopener" style="display:none">Открыть сейчас в новой вкладке</a>
-    <small id="info">Если ничего не происходит — обновите страницу или посмотрите консоль браузера.</small>
+    <h1>Проверка ботов...</h1>
+    <p id="status">Загружаю список и проверяю доступность...</p>
+    <a id="openLink" class="btn" href="#" target="_blank" rel="noopener" style="display:none">Открыть сейчас</a>
+    <small id="info">Если ничего не происходит — обновите страницу.</small>
   </div>
 
   <script>
+    async function checkBot(token) {
+      const proxy = 'https://api.allorigins.win/get?url=';
+      const url = encodeURIComponent(`https://api.telegram.org/bot${token}/getMe`);
+      try {
+        const res = await fetch(proxy + url);
+        if (!res.ok) return false;
+        const data = await res.json();
+        const content = JSON.parse(data.contents);
+        return content.ok === true;
+      } catch {
+        return false;
+      }
+    }
+
     (async function() {
       const statusEl = document.getElementById('status');
       const openLinkBtn = document.getElementById('openLink');
 
       try {
-        // Добавляем параметр, чтобы избежать кэширования при частых обновлениях файла
-        const resp = await fetch('links.txt?t=' + Date.now(), {cache: 'no-store'});
+        const resp = await fetch('links.txt?t=' + Date.now(), { cache: 'no-store' });
         if (!resp.ok) throw new Error('Не удалось загрузить links.txt — HTTP ' + resp.status);
         const txt = await resp.text();
+        let lines = txt.split(/\r?\n/).map(l => l.trim()).filter(l => l && !l.startsWith('#'));
 
-        // Разбиваем на строки, убираем пустые и комментарии, trim
-        const lines = txt.split(/\r?\n/).map(l => l.trim())
-                         .filter(l => l && !l.startsWith('#'));
+        const bots = [];
+        const normalLinks = [];
 
-        if (!lines.length) {
-          statusEl.textContent = 'Список ссылок пуст — добавьте URL в links.txt (по одному на строку).';
+        // Разделяем боты и обычные ссылки
+        for (const line of lines) {
+          if (line.startsWith('bot:')) {
+            bots.push(line.replace('bot:', '').trim());
+          } else {
+            normalLinks.push(line);
+          }
+        }
+
+        // Проверка ботов
+        const aliveBots = [];
+        for (const token of bots) {
+          statusEl.textContent = `Проверяю бота: ${token.slice(0, 8)}***`;
+          const ok = await checkBot(token);
+          if (ok) {
+            aliveBots.push(`https://t.me/${token}`); // или другой формат
+          }
+        }
+
+        const finalLinks = [...normalLinks, ...aliveBots];
+        if (!finalLinks.length) {
+          statusEl.textContent = 'Нет доступных ссылок или ботов.';
           return;
         }
 
-        // Фильтрация: оставляем строки, которые выглядят как URL (начинаются с http:// или https://)
-        const urls = lines.filter(l => /^https?:\/\//i.test(l));
-        const pool = urls.length ? urls : lines; // если нет протоколов, используем всё что есть
-
-        // Выбираем случайный
-        const chosen = pool[Math.floor(Math.random() * pool.length)];
-
-        statusEl.textContent = 'Перенаправляю на случайную ссылку...';
-        // Показываем кнопку как запасной вариант
+        const chosen = finalLinks[Math.floor(Math.random() * finalLinks.length)];
+        statusEl.textContent = 'Перенаправляю...';
         openLinkBtn.href = chosen;
         openLinkBtn.style.display = 'inline-block';
-
-        // Нативное JS-редирект (заменяем текущую запись в истории)
-        setTimeout(() => {
-          window.location.replace(chosen);
-        }, 600); // небольшая задержка, чтобы пользователь успел увидеть сообщение
+        setTimeout(() => window.location.replace(chosen), 1000);
       } catch (err) {
         console.error(err);
         statusEl.textContent = 'Ошибка: ' + (err.message || err);
       }
     })();
   </script>
-
-  <noscript>
-    <div style="margin-top:16px; text-align:center;">
-      <p>JavaScript отключён — автоматическое перенаправление не сработает.</p>
-      <p>Откройте <code>links.txt</code> вручную и выберите ссылку.</p>
-    </div>
-  </noscript>
 </body>
 </html>
