@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Random Telegram Redirect</title>
+  <title>Random redirect</title>
   <style>
     body { font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; 
            display:flex; align-items:center; justify-content:center; min-height:100vh;
@@ -12,137 +12,52 @@
            box-shadow: 0 8px 30px rgba(2,6,23,0.6); background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); }
     a.btn { display:inline-block; margin-top:16px; padding:10px 16px; border-radius:8px; text-decoration:none; color:inherit; border:1px solid rgba(255,255,255,0.06); }
     small { opacity:0.75; display:block; margin-top:8px; }
-    .loader { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3);
-              border-radius: 50%; border-top-color: #fff; animation: spin 1s ease-in-out infinite; }
-    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
   <div class="card" id="app">
-    <h1>🤖 Перенаправление на Telegram...</h1>
-    <p id="status">Загружаю список ботов...</p>
-    <a id="openLink" class="btn" href="#" target="_blank" rel="noopener" style="display:none">Открыть в новой вкладке</a>
-    <small id="info">Проверяю работоспособность ботов перед перенаправлением.</small>
+    <h1>Перенаправление...</h1>
+    <p id="status">Подгружаю список ссылок и выбираю случайную...</p>
+    <a id="openLink" class="btn" href="#" target="_blank" rel="noopener" style="display:none">Открыть сейчас в новой вкладке</a>
+    <small id="info">Если ничего не происходит — обновите страницу или посмотрите консоль браузера.</small>
   </div>
 
   <script>
     (async function() {
       const statusEl = document.getElementById('status');
       const openLinkBtn = document.getElementById('openLink');
-      const infoEl = document.getElementById('info');
-
-      // Функция для проверки работоспособности бота
-      async function checkBotActive(botUrl) {
-        return new Promise((resolve) => {
-          // Создаем скрытый iframe для проверки
-          const iframe = document.createElement('iframe');
-          iframe.style.display = 'none';
-          iframe.src = botUrl;
-          
-          iframe.onload = function() {
-            try {
-              // Пытаемся получить доступ к содержимому iframe
-              const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-              
-              // Проверяем наличие аватара бота
-              const tgmePage = iframeDoc.querySelector('.tgme_page');
-              const hasAvatar = tgmePage ? tgmePage.querySelector('.tgme_page_photo') !== null : false;
-              
-              // Удаляем iframe
-              document.body.removeChild(iframe);
-              resolve(hasAvatar);
-            } catch (error) {
-              // Если доступ к iframe заблокирован (CORS), считаем что бот рабочий
-              document.body.removeChild(iframe);
-              resolve(true);
-            }
-          };
-          
-          iframe.onerror = function() {
-            document.body.removeChild(iframe);
-            resolve(false);
-          };
-          
-          document.body.appendChild(iframe);
-          
-          // Таймаут на проверку
-          setTimeout(() => {
-            if (iframe.parentNode) {
-              document.body.removeChild(iframe);
-            }
-            resolve(false);
-          }, 5000);
-        });
-      }
 
       try {
-        statusEl.innerHTML = 'Загружаю список ботов <span class="loader"></span>';
-        
-        // Загружаем файл с ботами
+        // Добавляем параметр, чтобы избежать кэширования при частых обновлениях файла
         const resp = await fetch('links.txt?t=' + Date.now(), {cache: 'no-store'});
         if (!resp.ok) throw new Error('Не удалось загрузить links.txt — HTTP ' + resp.status);
         const txt = await resp.text();
 
-        // Парсим файл
-        const lines = txt.split(/\r?\n/)
-          .map(l => l.trim())
-          .filter(l => l && !l.startsWith('#'))
-          .map(l => {
-            // Нормализуем URL (добавляем https:// если нужно)
-            if (l.startsWith('@')) return 'https://t.me/' + l.slice(1);
-            if (!l.startsWith('http')) return 'https://t.me/' + l;
-            return l;
-          });
+        // Разбиваем на строки, убираем пустые и комментарии, trim
+        const lines = txt.split(/\r?\n/).map(l => l.trim())
+                         .filter(l => l && !l.startsWith('#'));
 
         if (!lines.length) {
-          statusEl.textContent = 'Список ботов пуст — добавьте URL в links.txt';
+          statusEl.textContent = 'Список ссылок пуст — добавьте URL в links.txt (по одному на строку).';
           return;
         }
 
-        statusEl.innerHTML = `Найдено ${lines.length} ботов. Проверяю работоспособность <span class="loader"></span>`;
-        infoEl.textContent = `Проверено: 0/${lines.length}`;
+        // Фильтрация: оставляем строки, которые выглядят как URL (начинаются с http:// или https://)
+        const urls = lines.filter(l => /^https?:\/\//i.test(l));
+        const pool = urls.length ? urls : lines; // если нет протоколов, используем всё что есть
 
-        // Проверяем ботов по очереди
-        let workingBot = null;
-        let checkedCount = 0;
+        // Выбираем случайный
+        const chosen = pool[Math.floor(Math.random() * pool.length)];
 
-        for (const botUrl of lines) {
-          checkedCount++;
-          infoEl.textContent = `Проверено: ${checkedCount}/${lines.length}`;
-          
-          statusEl.innerHTML = `Проверяю: ${botUrl} <span class="loader"></span>`;
-          
-          const isActive = await checkBotActive(botUrl);
-          
-          if (isActive) {
-            workingBot = botUrl;
-            statusEl.innerHTML = `✅ Найден рабочий бот!`;
-            break;
-          } else {
-            console.log(`❌ Бот недоступен: ${botUrl}`);
-          }
-        }
-
-        if (!workingBot) {
-          statusEl.textContent = '❌ Все боты в списке недоступны';
-          openLinkBtn.href = 'https://t.me';
-          openLinkBtn.textContent = 'Открыть Telegram';
-          openLinkBtn.style.display = 'inline-block';
-          return;
-        }
-
-        // Извлекаем username для красивого отображения
-        const botUsername = workingBot.split('/').pop().replace('@', '');
-        statusEl.innerHTML = `✅ Перенаправляю на <strong>@${botUsername}</strong>...`;
-        openLinkBtn.href = workingBot;
-        openLinkBtn.textContent = `Открыть @${botUsername}`;
+        statusEl.textContent = 'Перенаправляю на случайную ссылку...';
+        // Показываем кнопку как запасной вариант
+        openLinkBtn.href = chosen;
         openLinkBtn.style.display = 'inline-block';
 
-        // Перенаправляем с задержкой
+        // Нативное JS-редирект (заменяем текущую запись в истории)
         setTimeout(() => {
-          window.location.replace(workingBot);
-        }, 2000);
-
+          window.location.replace(chosen);
+        }, 600); // небольшая задержка, чтобы пользователь успел увидеть сообщение
       } catch (err) {
         console.error(err);
         statusEl.textContent = 'Ошибка: ' + (err.message || err);
