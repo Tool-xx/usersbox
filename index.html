@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Рандомный редирект</title>
+    <title>Рандомный редирект - UsersBox</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -12,22 +12,24 @@
             align-items: center;
             height: 100vh;
             margin: 0;
-            background-color: #f0f0f0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
         }
         .container {
             text-align: center;
-            padding: 20px;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            backdrop-filter: blur(10px);
             max-width: 90%;
         }
         .loader {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #3498db;
+            border: 4px solid rgba(255,255,255,0.3);
+            border-top: 4px solid #fff;
             border-radius: 50%;
-            width: 40px;
-            height: 40px;
+            width: 50px;
+            height: 50px;
             animation: spin 1s linear infinite;
             margin: 20px auto;
         }
@@ -36,49 +38,75 @@
             100% { transform: rotate(360deg); }
         }
         .error {
-            color: #d32f2f;
+            color: #ff6b6b;
+            background: rgba(0,0,0,0.5);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        button {
+            background: #fff;
+            color: #667eea;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 15px;
+            transition: all 0.3s ease;
+        }
+        button:hover {
+            background: #f8f9fa;
+            transform: translateY(-2px);
+        }
+        .link-info {
+            margin-top: 15px;
+            font-size: 14px;
+            opacity: 0.8;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Перенаправление...</h1>
+        <h1>🎯 Перенаправление...</h1>
         <div class="loader"></div>
-        <p>Идёт загрузка списка ссылок</p>
+        <p>Загружаем список ссылок из UsersBox</p>
+        <div class="link-info" id="linkInfo"></div>
     </div>
 
     <script>
-        // Для GitHub Pages используем RawGit или прямой raw-URL
-        const LINKS_FILE_URL = 'https://github.com/Tool-xx/usersbox/blob/main/links.txt';
+        // URL вашего файла links.txt на GitHub
+        const LINKS_FILE_URL = 'https://raw.githubusercontent.com/Tool-xx/usersbox/main/links.txt';
 
         async function loadAndRedirect() {
             try {
-                console.log('Загрузка ссылок из:', LINKS_FILE_URL);
+                const linkInfo = document.getElementById('linkInfo');
+                linkInfo.textContent = 'Загрузка из GitHub...';
                 
-                // Загружаем файл links.txt с raw-ссылки GitHub
+                // Загружаем файл links.txt
                 const response = await fetch(LINKS_FILE_URL, {
                     headers: {
-                        'Accept': 'text/plain',
-                        'Cache-Control': 'no-cache'
+                        'Cache-Control': 'no-cache',
+                        'Pragma': 'no-cache'
                     }
                 });
                 
                 if (!response.ok) {
-                    throw new Error(`Ошибка загрузки: ${response.status} ${response.statusText}`);
+                    throw new Error(`Ошибка HTTP: ${response.status}`);
                 }
                 
                 const text = await response.text();
-                console.log('Получено содержимое:', text);
                 
-                // Разбиваем текст на строки и фильтруем
+                // Разбиваем на строки и фильтруем
                 const links = text.split('\n')
                     .map(link => link.trim())
                     .filter(link => {
-                        // Фильтруем пустые строки и комментарии (строки, начинающиеся с #)
-                        return link !== '' && !link.startsWith('#');
+                        return link !== '' && 
+                               !link.startsWith('#') && 
+                               !link.startsWith('//');
                     });
                 
-                console.log('Найдено ссылок:', links.length, links);
+                console.log('Найдено ссылок:', links.length);
                 
                 if (links.length === 0) {
                     throw new Error('Файл не содержит валидных ссылок');
@@ -88,32 +116,40 @@
                 const randomIndex = Math.floor(Math.random() * links.length);
                 const randomLink = links[randomIndex];
                 
-                console.log('Выбрана ссылка:', randomLink);
+                // Показываем информацию о выбранной ссылке
+                linkInfo.textContent = `Выбрана ссылка: ${randomLink}`;
                 
-                // Проверяем и дополняем протокол если нужно
+                // Форматируем ссылку
                 let finalLink = randomLink;
-                if (!randomLink.startsWith('http://') && !randomLink.startsWith('https://')) {
+                if (!randomLink.startsWith('http://') && !randomLink.startsWith('https://') && !randomLink.startsWith('//')) {
                     finalLink = 'https://' + randomLink;
+                } else if (randomLink.startsWith('//')) {
+                    finalLink = 'https:' + randomLink;
                 }
                 
-                // Перенаправляем с небольшой задержкой
+                // Перенаправляем через 3 секунды
                 setTimeout(() => {
                     console.log('Перенаправление на:', finalLink);
                     window.location.href = finalLink;
-                }, 1500);
+                }, 3000);
                 
             } catch (error) {
                 console.error('Ошибка:', error);
                 document.querySelector('.container').innerHTML = `
-                    <h1 class="error">Ошибка</h1>
-                    <p class="error">${error.message}</p>
-                    <p>Проверьте:</p>
-                    <ul>
-                        <li>Файл links.txt существует в репозитории</li>
-                        <li>Ссылка на файл корректна: ${LINKS_FILE_URL}</li>
-                        <li>Файл содержит валидные URL (по одному на строку)</li>
-                    </ul>
-                    <button onclick="location.reload()">Попробовать снова</button>
+                    <h1>❌ Ошибка</h1>
+                    <div class="error">
+                        <p><strong>${error.message}</strong></p>
+                        <p>Проверьте:</p>
+                        <ul style="text-align: left; margin: 10px 0;">
+                            <li>Файл links.txt существует в репозитории</li>
+                            <li>URL файла: ${LINKS_FILE_URL}</li>
+                            <li>Файл содержит валидные ссылки</li>
+                        </ul>
+                    </div>
+                    <button onclick="location.reload()">🔄 Попробовать снова</button>
+                    <p style="margin-top: 15px; font-size: 12px;">
+                        Репозиторий: <a href="https://github.com/Tool-xx/usersbox" style="color: #fff;">Tool-xx/usersbox</a>
+                    </p>
                 `;
             }
         }
