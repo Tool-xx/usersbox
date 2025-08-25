@@ -20,6 +20,7 @@
             background: white;
             border-radius: 10px;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            max-width: 90%;
         }
         .loader {
             border: 4px solid #f3f3f3;
@@ -34,6 +35,9 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        .error {
+            color: #d32f2f;
+        }
     </style>
 </head>
 <body>
@@ -44,52 +48,77 @@
     </div>
 
     <script>
+        // Для GitHub Pages используем RawGit или прямой raw-URL
+        const LINKS_FILE_URL = 'https://raw.githubusercontent.com/ВАШ_USERNAME/ВАШ_REPO/ВАША_ВЕТКА/links.txt';
+
         async function loadAndRedirect() {
             try {
-                // Загружаем файл links.txt
-                const response = await fetch('links.txt');
+                console.log('Загрузка ссылок из:', LINKS_FILE_URL);
+                
+                // Загружаем файл links.txt с raw-ссылки GitHub
+                const response = await fetch(LINKS_FILE_URL, {
+                    headers: {
+                        'Accept': 'text/plain',
+                        'Cache-Control': 'no-cache'
+                    }
+                });
                 
                 if (!response.ok) {
-                    throw new Error('Файл links.txt не найден');
+                    throw new Error(`Ошибка загрузки: ${response.status} ${response.statusText}`);
                 }
                 
                 const text = await response.text();
+                console.log('Получено содержимое:', text);
                 
-                // Разбиваем текст на строки и фильтруем пустые
+                // Разбиваем текст на строки и фильтруем
                 const links = text.split('\n')
                     .map(link => link.trim())
-                    .filter(link => link !== '');
+                    .filter(link => {
+                        // Фильтруем пустые строки и комментарии (строки, начинающиеся с #)
+                        return link !== '' && !link.startsWith('#');
+                    });
+                
+                console.log('Найдено ссылок:', links.length, links);
                 
                 if (links.length === 0) {
-                    throw new Error('Файл links.txt пуст или не содержит валидных ссылок');
+                    throw new Error('Файл не содержит валидных ссылок');
                 }
                 
                 // Выбираем случайную ссылку
                 const randomIndex = Math.floor(Math.random() * links.length);
                 const randomLink = links[randomIndex];
                 
-                // Проверяем, начинается ли ссылка с http/https
+                console.log('Выбрана ссылка:', randomLink);
+                
+                // Проверяем и дополняем протокол если нужно
                 let finalLink = randomLink;
                 if (!randomLink.startsWith('http://') && !randomLink.startsWith('https://')) {
                     finalLink = 'https://' + randomLink;
                 }
                 
-                // Перенаправляем
+                // Перенаправляем с небольшой задержкой
                 setTimeout(() => {
+                    console.log('Перенаправление на:', finalLink);
                     window.location.href = finalLink;
-                }, 2000); // Задержка 2 секунды для показа анимации
+                }, 1500);
                 
             } catch (error) {
                 console.error('Ошибка:', error);
                 document.querySelector('.container').innerHTML = `
-                    <h1>Ошибка</h1>
-                    <p>${error.message}</p>
-                    <p>Убедитесь, что файл links.txt существует и содержит ссылки</p>
+                    <h1 class="error">Ошибка</h1>
+                    <p class="error">${error.message}</p>
+                    <p>Проверьте:</p>
+                    <ul>
+                        <li>Файл links.txt существует в репозитории</li>
+                        <li>Ссылка на файл корректна: ${LINKS_FILE_URL}</li>
+                        <li>Файл содержит валидные URL (по одному на строку)</li>
+                    </ul>
+                    <button onclick="location.reload()">Попробовать снова</button>
                 `;
             }
         }
 
-        // Запускаем процесс при загрузке страницы
+        // Запускаем при загрузке страницы
         document.addEventListener('DOMContentLoaded', loadAndRedirect);
     </script>
 </body>
