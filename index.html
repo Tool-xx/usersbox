@@ -33,7 +33,11 @@
         if (!res.ok) return false;
         const data = await res.json();
         const html = data.contents;
-        return html.includes('<div class="tgme_page_photo">');
+
+        if (html.includes('This page is not available')) return false;
+        if (html.includes('<meta property="og:image"')) return true; // фото есть
+        if (html.includes('<meta property="og:title"')) return true; // fallback
+        return false;
       } catch {
         return false;
       }
