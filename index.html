@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Random Telegram Bot Redirect</title>
+  <title>Random Telegram Redirect</title>
   <style>
     body { font-family: Inter, system-ui, sans-serif; display:flex; align-items:center; justify-content:center;
            min-height:100vh; margin:0; background:#0f172a; color:#e6edf3; }
@@ -15,67 +15,56 @@
 </head>
 <body>
   <div class="card" id="app">
-    <h1>Проверка ботов...</h1>
+    <h1>Поиск рабочей ссылки...</h1>
     <p id="status">Загружаю список и проверяю доступность...</p>
     <a id="openLink" class="btn" href="#" target="_blank" rel="noopener" style="display:none">Открыть сейчас</a>
     <small id="info">Если ничего не происходит — обновите страницу.</small>
   </div>
 
   <script>
-    async function checkBot(token) {
-      const proxy = 'https://api.allorigins.win/get?url=';
-      const url = encodeURIComponent(`https://api.telegram.org/bot${token}/getMe`);
+    const proxy = 'https://api.allorigins.win/get?url='; // CORS proxy
+    const statusEl = document.getElementById('status');
+    const openLinkBtn = document.getElementById('openLink');
+
+    async function isTelegramLinkAlive(url) {
       try {
-        const res = await fetch(proxy + url);
+        const encoded = encodeURIComponent(url);
+        const res = await fetch(proxy + encoded);
         if (!res.ok) return false;
         const data = await res.json();
-        const content = JSON.parse(data.contents);
-        return content.ok === true;
+        const html = data.contents;
+        return html.includes('<div class="tgme_page_photo">');
       } catch {
         return false;
       }
     }
 
     (async function() {
-      const statusEl = document.getElementById('status');
-      const openLinkBtn = document.getElementById('openLink');
-
       try {
         const resp = await fetch('links.txt?t=' + Date.now(), { cache: 'no-store' });
         if (!resp.ok) throw new Error('Не удалось загрузить links.txt — HTTP ' + resp.status);
         const txt = await resp.text();
-        let lines = txt.split(/\r?\n/).map(l => l.trim()).filter(l => l && !l.startsWith('#'));
+        let links = txt.split(/\r?\n/).map(l => l.trim()).filter(l => l && !l.startsWith('#'));
 
-        const bots = [];
-        const normalLinks = [];
-
-        // Разделяем боты и обычные ссылки
-        for (const line of lines) {
-          if (line.startsWith('bot:')) {
-            bots.push(line.replace('bot:', '').trim());
-          } else {
-            normalLinks.push(line);
-          }
-        }
-
-        // Проверка ботов
-        const aliveBots = [];
-        for (const token of bots) {
-          statusEl.textContent = `Проверяю бота: ${token.slice(0, 8)}***`;
-          const ok = await checkBot(token);
-          if (ok) {
-            aliveBots.push(`https://t.me/${token}`); // или другой формат
-          }
-        }
-
-        const finalLinks = [...normalLinks, ...aliveBots];
-        if (!finalLinks.length) {
-          statusEl.textContent = 'Нет доступных ссылок или ботов.';
+        if (!links.length) {
+          statusEl.textContent = 'Список пуст — добавьте ссылки в links.txt';
           return;
         }
 
-        const chosen = finalLinks[Math.floor(Math.random() * finalLinks.length)];
-        statusEl.textContent = 'Перенаправляю...';
+        const workingLinks = [];
+        for (const link of links) {
+          statusEl.textContent = `Проверяю: ${link}`;
+          const alive = await isTelegramLinkAlive(link);
+          if (alive) workingLinks.push(link);
+        }
+
+        if (!workingLinks.length) {
+          statusEl.textContent = 'Нет доступных ссылок (все мёртвые).';
+          return;
+        }
+
+        const chosen = workingLinks[Math.floor(Math.random() * workingLinks.length)];
+        statusEl.textContent = 'Перенаправляю на рабочую ссылку...';
         openLinkBtn.href = chosen;
         openLinkBtn.style.display = 'inline-block';
         setTimeout(() => window.location.replace(chosen), 1000);
