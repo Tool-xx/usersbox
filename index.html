@@ -64,6 +64,13 @@
             font-size: 14px;
             opacity: 0.8;
         }
+        .success {
+            color: #4ecdc4;
+            background: rgba(0,0,0,0.5);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
     </style>
 </head>
 <body>
@@ -75,27 +82,36 @@
     </div>
 
     <script>
-        // URL вашего файла links.txt на GitHub
+        // ПРАВИЛЬНЫЙ URL вашего файла links.txt
         const LINKS_FILE_URL = 'https://raw.githubusercontent.com/Tool-xx/usersbox/main/links.txt';
 
         async function loadAndRedirect() {
             try {
                 const linkInfo = document.getElementById('linkInfo');
-                linkInfo.textContent = 'Загрузка из GitHub...';
+                linkInfo.textContent = 'Подключаемся к GitHub...';
                 
-                // Загружаем файл links.txt
+                console.log('Пытаемся загрузить:', LINKS_FILE_URL);
+                
+                // Загружаем файл links.txt с таймаутом
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 10000);
+                
                 const response = await fetch(LINKS_FILE_URL, {
+                    signal: controller.signal,
                     headers: {
                         'Cache-Control': 'no-cache',
                         'Pragma': 'no-cache'
                     }
                 });
                 
+                clearTimeout(timeoutId);
+                
                 if (!response.ok) {
-                    throw new Error(`Ошибка HTTP: ${response.status}`);
+                    throw new Error(`Ошибка сервера: ${response.status} ${response.statusText}`);
                 }
                 
                 const text = await response.text();
+                console.log('Файл загружен успешно');
                 
                 // Разбиваем на строки и фильтруем
                 const links = text.split('\n')
@@ -117,7 +133,7 @@
                 const randomLink = links[randomIndex];
                 
                 // Показываем информацию о выбранной ссылке
-                linkInfo.textContent = `Выбрана ссылка: ${randomLink}`;
+                linkInfo.innerHTML = `<span class="success">✓ Найдено ${links.length} ссылок</span><br>Выбрана: ${randomLink}`;
                 
                 // Форматируем ссылку
                 let finalLink = randomLink;
@@ -136,15 +152,17 @@
             } catch (error) {
                 console.error('Ошибка:', error);
                 document.querySelector('.container').innerHTML = `
-                    <h1>❌ Ошибка</h1>
+                    <h1>❌ Ошибка загрузки</h1>
                     <div class="error">
-                        <p><strong>${error.message}</strong></p>
+                        <p><strong>${error.name === 'AbortError' ? 'Таймаут соединения' : error.message}</strong></p>
                         <p>Проверьте:</p>
                         <ul style="text-align: left; margin: 10px 0;">
                             <li>Файл links.txt существует в репозитории</li>
-                            <li>URL файла: ${LINKS_FILE_URL}</li>
-                            <li>Файл содержит валидные ссылки</li>
+                            <li>Ссылка корректна: <code>${LINKS_FILE_URL}</code></li>
+                            <li>Файл содержит валидные ссылки (по одной на строку)</li>
+                            <li>Файл доступен публично</li>
                         </ul>
+                        <p>Проверить файл: <a href="${LINKS_FILE_URL}" style="color: #ff6b6b;" target="_blank">${LINKS_FILE_URL}</a></p>
                     </div>
                     <button onclick="location.reload()">🔄 Попробовать снова</button>
                     <p style="margin-top: 15px; font-size: 12px;">
